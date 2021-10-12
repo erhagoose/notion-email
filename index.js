@@ -15,6 +15,8 @@ const transporter = nodemailer.createTransport({
 const notion = new Client({ auth: process.env.NOTION_KEY })
 const databaseId = process.env.NOTION_DATABASE_ID
 
+const refreshPeriod = process.env.REFRESH_PERIOD_MS || 5000;
+
 /**
  * Local map to store task pageId to its last status.
  * { [pageId: string]: string }
@@ -26,7 +28,7 @@ const taskPageIdToStatusMap = {}
  * Then poll for changes every 5 seconds (5000 milliseconds).
  */
 setInitialTaskPageIdToStatusMap().then(() => {
-  setInterval(findAndSendEmailsForUpdatedTasks, 5000)
+  setInterval(findAndSendEmailsForUpdatedTasks, refreshPeriod)
 })
 
 /**
@@ -39,14 +41,26 @@ async function setInitialTaskPageIdToStatusMap() {
   }
 }
 
+async function getSummaryOfPage(pageId) {
+  const { results } = await notion.blocks.children.list({ block_id: pageId });
+  const summary = results.map((block) => {
+    const { type } = block;
+    if (block[type].text) {
+      return block[type].text.map((t) => t.text.content).join("\n");
+    }
+    return  "";
+  }).join("\n");
+  return summary;
+}
+
 async function findAndSendEmailsForUpdatedTasks() {
   // Get the tasks currently in the database.
-  console.log("\nFetching tasks from Notion DB...")
+  // console.log("\nFetching tasks from Notion DB...")
   const currentTasks = await getTasksFromNotionDatabase()
 
   // Return any tasks that have had their status updated.
   const updatedTasks = findUpdatedTasks(currentTasks)
-  console.log(`Found ${updatedTasks.length} updated tasks.`)
+  if (updatedTasks.length > 0) console.log(`Found ${updatedTasks.length} updated tasks.`);
 
   // For each updated task, update taskPageIdToStatusMap and send an email notification.
   for (const task of updatedTasks) {
@@ -75,7 +89,7 @@ async function getTasksFromNotionDatabase() {
     }
     cursor = next_cursor
   }
-  console.log(`${pages.length} pages successfully fetched.`)
+  // console.log(`${pages.length} pages successfully fetched.`)
   return pages.map(page => {
     const statusProperty = page.properties["Status"]
     const status = statusProperty ? ( statusProperty.select ? statusProperty.select.name: "No Status" ) : "No Status";
@@ -109,20 +123,20 @@ function findUpdatedTasks(currentTasks) {
  *
  * @param {{ status: string, title: string }} task
  */
-async function sendUpdateEmail({ title, status }) {
-  const message = `Status of Notion task ("${title}") has been updated to "${status}".`
-  console.log(message)
+async function sendUpdateEmail({ title, status, pageId }) {
+  const summary = await getSummaryOfPage(pageId);
+  const message = `Page contents brief summary 😜: \n ${summary}`
 
   try {
     // send mail with defined transport object
     let info = await transporter.sendMail({
       from: process.env.EMAIL_FROM_FIELD, // sender address
       to: process.env.EMAIL_TO_FIELD, // list of receivers
-      subject: "Notion Task Status Updated", // Subject line
+      subject: `Status of "${title}" Notion Page has been updated to "${status}"`, // Subject line
       text: message, // plain text body
       // html: "<b>Hello world?</b>", // html body
     });
-    console.log("Message sent: %s", info.messageId);
+    console.log("✅ Message sent: %s", info.messageId);
   } catch (error) {
     console.error(error)
   }
