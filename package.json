@@ -1,0 +1,20 @@
+{
+  "name": "database-update-send-email",
+  "version": "1.0.0",
+  "description": "Send an email with SendGrid when an update is made in Notion.",
+  "main": "index.js",
+  "engines": {
+    "node": "12.x"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@notionhq/client": "^0.4.2",
+    "dotenv": "^10.0.0",
+    "nodemailer": "^6.7.0"
+  },
+  "author": "Aman Gupta",
+  "license": "MIT"
+}
