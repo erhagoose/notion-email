@@ -1,10 +1,10 @@
-# Sample Integration: Notion to Email
+# Notion Integration: Page Email
 
 <img src="https://dev.notion.so/front-static/external/readme/images/notion-email-example@2x.png" alt="drawing" width="500"/>
 
 ## About the Integration
 
-This Notion integration sends an email whenever the Status of a page in a database is updated.
+This Notion integration sends an email for our pages. Only intented for Erha & Goose.
 
 ## Running Locally
 
@@ -12,13 +12,9 @@ This Notion integration sends an email whenever the Status of a page in a databa
 
 ```zsh
 # Clone this repository locally
-git clone https://github.com/makenotion/notion-sdk-js.git
+git clone https://github.com/erhagoose/notion-email.git
 
-# Switch into this project
-cd notion-sdk-js/examples/database-update-send-email
-
-# Install the dependencies
-npm install
+npm i
 ```
 
 ### 2. Set your environment variables in a `.env` file
@@ -41,5 +37,5 @@ To create a Notion database that will work with this example, duplicate [this te
 ### 3. Run code
 
 ```zsh
-node index.js
+npm start
 ```
