@@ -59,7 +59,7 @@ async function findAndSendEmailsForUpdatedTasks() {
   const currentTasks = await getTasksFromNotionDatabase();
 
   // Return any tasks that have had their status updated.
-  const updatedTasks = findUpdatedTasks(currentTasks);
+  const updatedTasks = findUpdatedDoneTasks(currentTasks);
   if (updatedTasks.length > 0) console.log(`Found ${updatedTasks.length} updated tasks.`);
 
   // For each updated task, update taskPageIdToStatusMap and send an email notification.
@@ -111,10 +111,10 @@ async function getTasksFromNotionDatabase() {
  * @param {Array<{ pageId: string, status: string, title: string }>} currentTasks
  * @returns {Array<{ pageId: string, status: string, title: string }>}
  */
-function findUpdatedTasks(currentTasks) {
+function findUpdatedDoneTasks(currentTasks) {
   return currentTasks.filter(currentTask => {
     const previousStatus = getPreviousTaskStatus(currentTask);
-    return currentTask.status !== previousStatus;
+    return currentTask.status !== previousStatus && currentTask.status.indexOf('Done') >= 0;
   });
 }
 

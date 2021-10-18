@@ -6,6 +6,8 @@
 
 This Notion integration sends an email for our pages. Only intented for Erha & Goose.
 
+Send an email when the page status updated to `Done`.
+
 ## Running Locally
 
 ### 1. Setup your local project
