@@ -15,6 +15,9 @@
     "dotenv": "^10.0.0",
     "nodemailer": "^6.7.0"
   },
-  "author": "Aman Gupta",
-  "license": "MIT"
+  "author": "Hilton Leo",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.0.1"
+  }
 }

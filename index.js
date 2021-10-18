@@ -1,8 +1,8 @@
-const { Client } = require("@notionhq/client")
-const dotenv = require("dotenv")
-const nodemailer = require("nodemailer")
+const { Client } = require('@notionhq/client');
+const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
-dotenv.config()
+dotenv.config();
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS, // generated ethereal password
   },
 });
-const notion = new Client({ auth: process.env.NOTION_KEY })
-const databaseId = process.env.NOTION_DATABASE_ID
+const notion = new Client({ auth: process.env.NOTION_KEY });
+const databaseId = process.env.NOTION_DATABASE_ID;
 
 const refreshPeriod = process.env.REFRESH_PERIOD_MS || 5000;
 
@@ -21,23 +21,23 @@ const refreshPeriod = process.env.REFRESH_PERIOD_MS || 5000;
  * Local map to store task pageId to its last status.
  * { [pageId: string]: string }
  */
-const taskPageIdToStatusMap = {}
+const taskPageIdToStatusMap = {};
 
 /**
  * Initialize local data store.
  * Then poll for changes every 5 seconds (5000 milliseconds).
  */
 setInitialTaskPageIdToStatusMap().then(() => {
-  setInterval(findAndSendEmailsForUpdatedTasks, refreshPeriod)
-})
+  setInterval(findAndSendEmailsForUpdatedTasks, refreshPeriod);
+});
 
 /**
  * Get and set the initial data store with tasks currently in the database.
  */
 async function setInitialTaskPageIdToStatusMap() {
-  const currentTasks = await getTasksFromNotionDatabase()
+  const currentTasks = await getTasksFromNotionDatabase();
   for (const { pageId, status } of currentTasks) {
-    taskPageIdToStatusMap[pageId] = status
+    taskPageIdToStatusMap[pageId] = status;
   }
 }
 
@@ -46,26 +46,26 @@ async function getSummaryOfPage(pageId) {
   const summary = results.map((block) => {
     const { type } = block;
     if (block[type].text) {
-      return block[type].text.map((t) => t.text.content).join("\n");
+      return block[type].text.map((t) => t.text.content).join('\n');
     }
-    return  "";
-  }).join("\n");
+    return '';
+  }).join('\n');
   return summary;
 }
 
 async function findAndSendEmailsForUpdatedTasks() {
   // Get the tasks currently in the database.
   // console.log("\nFetching tasks from Notion DB...")
-  const currentTasks = await getTasksFromNotionDatabase()
+  const currentTasks = await getTasksFromNotionDatabase();
 
   // Return any tasks that have had their status updated.
-  const updatedTasks = findUpdatedTasks(currentTasks)
+  const updatedTasks = findUpdatedTasks(currentTasks);
   if (updatedTasks.length > 0) console.log(`Found ${updatedTasks.length} updated tasks.`);
 
   // For each updated task, update taskPageIdToStatusMap and send an email notification.
   for (const task of updatedTasks) {
-    taskPageIdToStatusMap[task.pageId] = task.status
-    await sendUpdateEmail(task)
+    taskPageIdToStatusMap[task.pageId] = task.status;
+    await sendUpdateEmail(task);
   }
 }
 
@@ -75,33 +75,33 @@ async function findAndSendEmailsForUpdatedTasks() {
  * @returns {Promise<Array<{ pageId: string, status: string, title: string }>>}
  */
 async function getTasksFromNotionDatabase() {
-  const pages = []
-  let cursor = undefined
+  const pages = [];
+  let cursor = undefined;
 
-  while (true) {
+  for (;;) {
     const { results, next_cursor } = await notion.databases.query({
       database_id: databaseId,
       start_cursor: cursor,
-    })
-    pages.push(...results)
+    });
+    pages.push(...results);
     if (!next_cursor) {
-      break
+      break;
     }
-    cursor = next_cursor
+    cursor = next_cursor;
   }
   // console.log(`${pages.length} pages successfully fetched.`)
   return pages.map(page => {
-    const statusProperty = page.properties["Status"]
-    const status = statusProperty ? ( statusProperty.select ? statusProperty.select.name: "No Status" ) : "No Status";
-    const title = page.properties["Name"].title
+    const statusProperty = page.properties['Status'];
+    const status = statusProperty ? (statusProperty.select ? statusProperty.select.name : 'No Status') : 'No Status';
+    const title = page.properties['Name'].title
       .map(({ plain_text }) => plain_text)
-      .join("")
+      .join('');
     return {
       pageId: page.id,
       status,
       title,
-    }
-  })
+    };
+  });
 }
 
 /**
@@ -113,9 +113,9 @@ async function getTasksFromNotionDatabase() {
  */
 function findUpdatedTasks(currentTasks) {
   return currentTasks.filter(currentTask => {
-    const previousStatus = getPreviousTaskStatus(currentTask)
-    return currentTask.status !== previousStatus
-  })
+    const previousStatus = getPreviousTaskStatus(currentTask);
+    return currentTask.status !== previousStatus;
+  });
 }
 
 /**
@@ -125,7 +125,7 @@ function findUpdatedTasks(currentTasks) {
  */
 async function sendUpdateEmail({ title, status, pageId }) {
   const summary = await getSummaryOfPage(pageId);
-  const message = `Page contents brief summary 😜: \n ${summary}`
+  const message = `Page contents brief summary 😜: \n ${summary}`;
 
   try {
     // send mail with defined transport object
@@ -136,9 +136,9 @@ async function sendUpdateEmail({ title, status, pageId }) {
       text: message, // plain text body
       // html: "<b>Hello world?</b>", // html body
     });
-    console.log("✅ Message sent: %s", info.messageId);
+    console.log('✅ Message sent: %s', info.messageId);
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
 }
 
@@ -150,7 +150,7 @@ async function sendUpdateEmail({ title, status, pageId }) {
 function getPreviousTaskStatus({ pageId, status }) {
   // If this task hasn't been seen before, add to local pageId to status map.
   if (!taskPageIdToStatusMap[pageId]) {
-    taskPageIdToStatusMap[pageId] = status
+    taskPageIdToStatusMap[pageId] = status;
   }
-  return taskPageIdToStatusMap[pageId]
+  return taskPageIdToStatusMap[pageId];
 }
