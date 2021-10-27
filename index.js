@@ -79,15 +79,19 @@ async function getTasksFromNotionDatabase() {
   let cursor = undefined;
 
   for (;;) {
-    const { results, next_cursor } = await notion.databases.query({
-      database_id: databaseId,
-      start_cursor: cursor,
-    });
-    pages.push(...results);
-    if (!next_cursor) {
+    try {
+      const { results, next_cursor } = await notion.databases.query({
+        database_id: databaseId,
+        start_cursor: cursor,
+      });
+      pages.push(...results);
+      if (!next_cursor) {
+        break;
+      }
+      cursor = next_cursor;
+    } catch (error) {
       break;
     }
-    cursor = next_cursor;
   }
   // console.log(`${pages.length} pages successfully fetched.`)
   return pages.map(page => {
